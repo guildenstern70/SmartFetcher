@@ -8,6 +8,7 @@ $(function() {
         dataType: "json",
         success: function (result)
         {
+            console.log(JSON.stringify(result));
             $('#version').text(result.version);
         }
     });

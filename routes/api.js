@@ -1,45 +1,72 @@
 const express = require('express');
+const fetch = require('node-fetch');
 const router = express.Router();
 
-const googleREST = '';
-const appleREST = '';
+const googleREST = 'http://fakestoresapi.mybluemix.net/api/google/verify/applications/aaaaaaa/purchases/products/bbbbbbb/tokens/cccccccc?access_token=23132321132';
+const appleREST = 'http://fakestoresapi.mybluemix.net/api/apple/verify';
 
-/* GET users listing. */
-router.get('/get-google', function(req, res, next) {
+function checkStatus(response)
+{
+    if (response.status >= 200 && response.status < 300)
+    {
+        console.log('Response OK > ' + response.status);
+        return response.json();
+    }
+    else
+    {
+        const error = new Error(response.statusText);
+        error.response = response;
+        throw error;
+    }
+}
 
-    res.setHeader('Content-Type', 'application/json');
-    console.log('Calling Google API at '+ googleREST);
+router.get('/get-google', function (req, res, next)
+{
+    console.log('Calling Google API at ' + googleREST);
 
-    const googleResponse = {
-        "kind": "androidpublisher#productPurchase",
-        "purchaseTimeMillis": Date.now(),
-        "purchaseState": 0, // 0=purchased, 1=cancelled
-        "consumptionState": 0, // 0=to be consumed, 1=consumed
-        "developerPayload": "This is the developer payload",
-        "orderId": "3289HJHHK987393J",
-        "purchaseType": 0 // 0=test, 1=promo
-    };
+    fetch(googleREST).then( (response) =>
 
-    res.send(googleResponse);
+        checkStatus(response)
+
+    ).then( (receivedData) =>
+    {
+        res.setHeader('Content-Type', 'application/json');
+        console.log('Received Data: ' + JSON.stringify(receivedData));
+        res.send(receivedData);
+
+    }).catch(function (error)
+    {
+        console.log('There has been a problem with your fetch operation: ' + error.message);
+    });
+
 
 });
 
-router.get('/get-apple', function(req, res, next) {
+router.get('/get-apple', function (req, res, next)
+{
 
-    res.setHeader('Content-Type', 'application/json');
-    console.log('Calling Apple API at '+ appleREST);
+    console.log('Calling Apple API at ' + appleREST);
 
-    const appleResponse = {
-        "kind": "androidpublisher#productPurchase",
-        "purchaseTimeMillis": Date.now(),
-        "purchaseState": 0, // 0=purchased, 1=cancelled
-        "consumptionState": 0, // 0=to be consumed, 1=consumed
-        "developerPayload": "This is the developer payload",
-        "orderId": "3289HJHHK987393J",
-        "purchaseType": 0 // 0=test, 1=promo
+    const appleData = {
+        "receipt-data": "238h6vxetzb238rxt23crttcrt2xby8tnu"
     };
 
-    res.send(appleResponse);
+    fetch(appleREST, {
+        method: 'post',
+        body: JSON.stringify(appleData),
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+    }).then( (response) => checkStatus(response) )
+    .then((data) =>
+    {
+        res.setHeader('Content-Type', 'application/json');
+        console.log('Data Received: ' + JSON.stringify(data));
+        res.send(data);
+    });
+
+
 });
 
 module.exports = router;
